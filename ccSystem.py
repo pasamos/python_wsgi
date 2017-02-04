@@ -33,14 +33,15 @@ def application(environ, start_response):
                 request_body_size = int(environ.get('CONTENT_LENGTH', 0))
                 request_body = environ['wsgi.input'].read(request_body_size)
                 par = urlparse.parse_qs(request_body) # urlparse.parse_qs return dict ; urlparse.parse_qsl return list
-                #print 'par:%s' % par
                 username = escape(par.get('username',[''])[0]) # [''] is default values,if not exists 'username' then return default value
                 password = escape(par.get('password',[''])[0])
                 if username=='' or password=='':
                         return loginPage+'''<p><font color="red">Please enter your username and password</font></p>'''
 
-                sqlValues=getUserInfo(username)
-                #print sqlValues
+                #sqlValues=getUserInfoById(username)
+                
+                kw = {'id':username}
+                sqlValues = getUserInfo(**kw)
                 
                 if sqlValues!= None and len(sqlValues)>0:
                         #colname = {'id','name','password'}
@@ -62,7 +63,10 @@ def application(environ, start_response):
         if method=='GET' and path=='/users':
                 #response_body='[{"id":"admin","name":"Admin"},{"id":"test","name":"Test"}]'
                 
-                sqlValues = getUserInfo()
+                #sqlValues = getUserInfoById()
+                
+                kw = {}
+                sqlValues = getUserInfo(**kw)
                 jsonData = []
                 for row in sqlValues:
                         result = {}
@@ -70,13 +74,27 @@ def application(environ, start_response):
                         result['name'] = str(row[1])
                         jsonData.append(result)
 
-                #print str(jsonData).replace("'", "\"")
                 response_body=str(jsonData).replace("'", "\"")
             
         return [response_body]
 
+def getUserInfo(**kw):
+        conn=sqlite3.connect('ccSystem.db')
+        cursor = conn.cursor()
+        
+        sql='select id,name,password from user where 1=1'
+        param=[]
+        for k, v in kw.iteritems():
+                sql+=' and %s=?' % k
+                param.append(v)
 
-def getUserInfo(userid=None):
+        cursor.execute(sql,tuple(param))
+        data = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        return data
+
+def getUserInfoById(userid=None):
         conn=sqlite3.connect('ccSystem.db')
         cursor = conn.cursor()
         
@@ -92,7 +110,6 @@ def getUserInfo(userid=None):
         cursor.close()
         conn.close()
         return data
-
 
 httpd = make_server('', 8000, application)
 print "Serving HTTP on port 8000..."
