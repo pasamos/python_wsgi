@@ -32,45 +32,36 @@ def application(environ, start_response):
                 request_body_size = int(environ.get('CONTENT_LENGTH', 0))
                 request_body = environ['wsgi.input'].read(request_body_size)
                 par = parse_qs(request_body)
-                print 'par:%s' % par
+                #print 'par:%s' % par
                 username = escape(par.get('username',[''])[0]) # [''] is default values,if not exists 'username' then return default value
                 password = escape(par.get('password',[''])[0])
                 if username=='' or password=='':
-                        return loginPage+'''<p><font color="red">Please enter your username and password.</font></p>'''
+                        return loginPage+'''<p><font color="red">Please enter your username and password</font></p>'''
 
-                conn=sqlite3.connect('ccSystem.db')
-                cursor = conn.cursor()
-                cursor.execute('select id,name,password from user where id=?', (username,))
-                sqlValues = cursor.fetchone()
-                cursor.close()
-                conn.close()
+                sqlValues=getUserInfo(username)
+                #print sqlValues
                 
-                if sqlValues!= None:
+                if sqlValues!= None and len(sqlValues)>0:
                         #colname = {'id','name','password'}
-                        #userinfo = dict(zip(colname,list(sqlValues)))
+                        #userinfo = dict(zip(colname,list(sqlValues[0])))
                         #print 'userinfo:%s' % userinfo
                         #correctPassword = userinfo['password']
                         #showName = str(userinfo['name'])
 
-                        correctPassword = sqlValues[2]
-                        showName = str(sqlValues[1])
+                        correctPassword = sqlValues[0][2]
+                        showName = str(sqlValues[0][1])
 
                         if password==correctPassword:
                                 response_body = '<h3>welcome, %s!</h3>' % showName
                         else :
-                                response_body = loginPage+'''<p><font color="red">Wrong password.</font></p>'''
+                                response_body = loginPage+'''<p><font color="red">Wrong password</font></p>'''
                 else:
-                        response_body = loginPage+'''<p><font color="red">Wrong username.</font></p>'''
+                        response_body = loginPage+'''<p><font color="red">Wrong username</font></p>'''
                        
         if method=='GET' and path=='/users':
                 #response_body='[{"id":"admin","name":"Admin"},{"id":"test","name":"Test"}]'
-                conn=sqlite3.connect('ccSystem.db')
-                cursor = conn.cursor()
-                cursor.execute('select id,name from user')
-                sqlValues = cursor.fetchall()
-                cursor.close()
-                conn.close()
-
+                
+                sqlValues = getUserInfo()
                 jsonData = []
                 for row in sqlValues:
                         result = {}
@@ -78,11 +69,30 @@ def application(environ, start_response):
                         result['name'] = str(row[1])
                         jsonData.append(result)
 
-                print str(jsonData).replace("'", "\"")
+                #print str(jsonData).replace("'", "\"")
                 response_body=str(jsonData).replace("'", "\"")
             
         return [response_body]
+
+
+def getUserInfo(userid=None):
+        conn=sqlite3.connect('ccSystem.db')
+        cursor = conn.cursor()
         
+        sql='select id,name,password from user'
+        param=()
+        
+        if(userid!=None):
+                sql='select id,name,password from user where id=?'
+                param=(userid,)
+        
+        cursor.execute(sql,param)
+        data = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        return data
+
+
 httpd = make_server('', 8000, application)
 print "Serving HTTP on port 8000..."
 httpd.serve_forever()
