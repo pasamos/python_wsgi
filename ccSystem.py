@@ -4,8 +4,8 @@
 from wsgiref.simple_server import make_server
 from cgi import escape
 import urlparse
-import sqlite3
 import json
+import ccSystemService as service
 
 def application(environ, start_response):
         status = '200 OK'
@@ -38,10 +38,10 @@ def application(environ, start_response):
                 if username=='' or password=='':
                         return loginPage+'''<p><font color="red">Please enter your username and password</font></p>'''
 
-                #sqlValues=getUserInfoById(username)
+                #sqlValues=service.getUserInfoById(username)
                 
                 kw = {'id':username}
-                sqlValues = getUserInfo(**kw)
+                sqlValues = service.getUserInfo(**kw)
                 
                 if sqlValues!= None and len(sqlValues)>0:
                         #colname = {'id','name','password'}
@@ -63,10 +63,10 @@ def application(environ, start_response):
         if method=='GET' and path=='/users':
                 #response_body='[{"id":"admin","name":"Admin"},{"id":"test","name":"Test"}]'
                 
-                #sqlValues = getUserInfoById()
+                #sqlValues = service.getUserInfoById()
                 
                 kw = {}
-                sqlValues = getUserInfo(**kw)
+                sqlValues = service.getUserInfo(**kw)
                 jsonData = []
                 for row in sqlValues:
                         result = {}
@@ -78,38 +78,6 @@ def application(environ, start_response):
             
         return [response_body]
 
-def getUserInfo(**kw):
-        conn=sqlite3.connect('ccSystem.db')
-        cursor = conn.cursor()
-        
-        sql='select id,name,password from user where 1=1'
-        param=[]
-        for k, v in kw.iteritems():
-                sql+=' and %s=?' % k
-                param.append(v)
-
-        cursor.execute(sql,tuple(param))
-        data = cursor.fetchall()
-        cursor.close()
-        conn.close()
-        return data
-
-def getUserInfoById(userid=None):
-        conn=sqlite3.connect('ccSystem.db')
-        cursor = conn.cursor()
-        
-        sql='select id,name,password from user'
-        param=()
-        
-        if(userid!=None):
-                sql+=' where id=?'
-                param=(userid,)
-        
-        cursor.execute(sql,param)
-        data = cursor.fetchall()
-        cursor.close()
-        conn.close()
-        return data
 
 httpd = make_server('', 8000, application)
 print "Serving HTTP on port 8000..."
