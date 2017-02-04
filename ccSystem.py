@@ -5,6 +5,7 @@ from wsgiref.simple_server import make_server
 from cgi import escape
 import urlparse
 import json
+
 import ccSystemService as service
 
 def application(environ, start_response):
@@ -26,6 +27,8 @@ def application(environ, start_response):
         method = environ['REQUEST_METHOD']
         path = environ['PATH_INFO']
 
+        userservice=service.UserService()
+        
         if method=='GET' and path=='/login':
                 response_body= loginPage
         
@@ -38,10 +41,10 @@ def application(environ, start_response):
                 if username=='' or password=='':
                         return loginPage+'''<p><font color="red">Please enter your username and password</font></p>'''
 
-                #sqlValues=service.getUserInfoById(username)
+                #sqlValues=userservice.getUserInfoById(username)
                 
                 kw = {'id':username}
-                sqlValues = service.getUserInfo(**kw)
+                sqlValues = userservice.getUserInfo(**kw)
                 
                 if sqlValues!= None and len(sqlValues)>0:
                         #colname = {'id','name','password'}
@@ -62,11 +65,11 @@ def application(environ, start_response):
                        
         if method=='GET' and path=='/users':
                 #response_body='[{"id":"admin","name":"Admin"},{"id":"test","name":"Test"}]'
-                
-                #sqlValues = service.getUserInfoById()
+
+                #sqlValues = userservice.getUserInfoById()
                 
                 kw = {}
-                sqlValues = service.getUserInfo(**kw)
+                sqlValues = userservice.getUserInfo(**kw)
                 jsonData = []
                 for row in sqlValues:
                         result = {}
