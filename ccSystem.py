@@ -2,7 +2,8 @@
 # http://localhost:8000/
 
 from wsgiref.simple_server import make_server
-from cgi import parse_qs, escape
+from cgi import escape
+import urlparse
 import sqlite3
 import json
 
@@ -31,7 +32,7 @@ def application(environ, start_response):
         if method=='POST' and path=='/login':
                 request_body_size = int(environ.get('CONTENT_LENGTH', 0))
                 request_body = environ['wsgi.input'].read(request_body_size)
-                par = parse_qs(request_body)
+                par = urlparse.parse_qs(request_body) # urlparse.parse_qs return dict ; urlparse.parse_qsl return list
                 #print 'par:%s' % par
                 username = escape(par.get('username',[''])[0]) # [''] is default values,if not exists 'username' then return default value
                 password = escape(par.get('password',[''])[0])
