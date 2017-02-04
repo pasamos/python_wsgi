@@ -83,7 +83,7 @@ def getUserInfo(userid=None):
         param=()
         
         if(userid!=None):
-                sql='select id,name,password from user where id=?'
+                sql+=' where id=?'
                 param=(userid,)
         
         cursor.execute(sql,param)
